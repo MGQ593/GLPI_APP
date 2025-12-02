@@ -1,7 +1,7 @@
 // Service Worker para Push Notifications - Mesa de Soporte
 // Este archivo debe estar en /public/sw.js para que Next.js lo sirva correctamente
 
-const SW_VERSION = '1.0.0';
+const SW_VERSION = '1.0.1';
 
 // Evento de instalación
 self.addEventListener('install', (event) => {
@@ -12,9 +12,30 @@ self.addEventListener('install', (event) => {
 
 // Evento de activación
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Service Worker activado');
+  console.log('[SW] Service Worker activado, versión:', SW_VERSION);
   // Tomar control de todas las páginas inmediatamente
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    Promise.all([
+      clients.claim(),
+      // Limpiar caches antiguos si existen
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[SW] Eliminando cache antiguo:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      })
+    ])
+  );
+});
+
+// Escuchar mensaje para forzar activación
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Recibido SKIP_WAITING, activando...');
+    self.skipWaiting();
+  }
 });
 
 // Evento de notificación push

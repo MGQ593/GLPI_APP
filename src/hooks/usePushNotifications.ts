@@ -111,22 +111,35 @@ export function usePushNotifications(userEmail: string | null): UsePushNotificat
   // Registrar el Service Worker
   const registerServiceWorker = useCallback(async (): Promise<ServiceWorkerRegistration | null> => {
     try {
-      // Verificar si ya está registrado
-      const existingReg = await navigator.serviceWorker.getRegistration('/sw.js');
-      if (existingReg) {
-        console.log('[Push] Service Worker ya registrado');
-        return existingReg;
-      }
+      // Primero intentar obtener el registro existente
+      let registration = await navigator.serviceWorker.getRegistration('/');
 
-      // Registrar nuevo
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-      });
+      if (registration) {
+        console.log('[Push] Service Worker existente encontrado');
+
+        // Si hay una actualización pendiente, activarla
+        if (registration.waiting) {
+          console.log('[Push] Activando Service Worker en espera');
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        // Verificar si necesita actualización
+        await registration.update();
+      } else {
+        // Registrar nuevo
+        console.log('[Push] Registrando nuevo Service Worker');
+        registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+        });
+      }
 
       console.log('[Push] Service Worker registrado:', registration.scope);
 
       // Esperar a que esté activo
       await navigator.serviceWorker.ready;
+
+      // Pequeña espera para asegurar que el SW esté completamente activo
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       return registration;
     } catch (error) {
