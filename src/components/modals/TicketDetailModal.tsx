@@ -252,7 +252,7 @@ export function TicketDetailModal({
         </div>
 
         {/* Contenido del Modal */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className={`flex-1 p-6 space-y-5 flex flex-col ${isExpanded ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {/* Estado y Prioridad */}
           <div className="flex flex-wrap items-center gap-3">
             <span
@@ -295,12 +295,12 @@ export function TicketDetailModal({
           </div>
 
           {/* Timeline de Conversación */}
-          <div className={`flex flex-col ${isExpanded ? 'flex-1' : ''}`}>
-            <div className="flex items-center gap-2 mb-3">
+          <div className={`flex flex-col min-h-0 ${isExpanded ? 'flex-1' : ''}`}>
+            <div className="flex items-center gap-2 mb-3 flex-shrink-0">
               <MessageSquare className="w-5 h-5 text-blue-600" />
               <h4 className="font-semibold text-slate-900">Conversación</h4>
             </div>
-            <div ref={messagesContainerRef} className={`bg-slate-50 rounded-xl p-4 overflow-y-auto border border-slate-200 space-y-4 ${isExpanded ? 'flex-1' : 'max-h-72'}`}>
+            <div ref={messagesContainerRef} className={`bg-slate-50 rounded-xl p-4 overflow-y-auto border border-slate-200 space-y-4 ${isExpanded ? 'flex-1 min-h-0' : 'max-h-72'}`}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
