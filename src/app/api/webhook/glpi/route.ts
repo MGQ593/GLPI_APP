@@ -66,8 +66,8 @@ async function sendPushNotificationToUser(
       body: ticketTitle
         ? `${statusText} - ${ticketTitle.substring(0, 50)}${ticketTitle.length > 50 ? '...' : ''}`
         : `Estado: ${statusText}`,
-      icon: '/icon-192x192.png',
-      badge: '/icon-72x72.png',
+      icon: '/icons/icon-192x192.svg',
+      badge: '/icons/icon-192x192.svg',
       tag: `ticket-${ticketId}`,
       data: {
         ticketId,

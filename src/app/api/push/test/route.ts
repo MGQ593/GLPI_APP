@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     const payload = JSON.stringify({
       title: `Ticket #${ticketId}`,
       body: `${status} - ${title}`,
-      icon: '/icon-192x192.png',
-      badge: '/icon-72x72.png',
+      icon: '/icons/icon-192x192.svg',
+      badge: '/icons/icon-192x192.svg',
       tag: `ticket-${ticketId}`,
       data: {
         ticketId,
