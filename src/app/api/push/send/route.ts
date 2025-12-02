@@ -51,11 +51,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener todas las suscripciones del usuario
+    // Obtener todas las suscripciones del usuario (case-insensitive)
     const subscriptions = await query<PushSubscriptionRecord>(
       `SELECT id, endpoint, p256dh_key, auth_key
        FROM push_subscriptions
-       WHERE user_email = $1`,
+       WHERE LOWER(user_email) = LOWER($1)`,
       [userEmail]
     );
 

@@ -37,14 +37,14 @@ async function sendPushNotificationToUser(
   }
 
   try {
-    // Obtener todas las suscripciones del usuario
+    // Obtener todas las suscripciones del usuario (case-insensitive)
     const subscriptions = await query<{
       id: number;
       endpoint: string;
       p256dh_key: string;
       auth_key: string;
     }>(
-      'SELECT id, endpoint, p256dh_key, auth_key FROM push_subscriptions WHERE user_email = $1',
+      'SELECT id, endpoint, p256dh_key, auth_key FROM push_subscriptions WHERE LOWER(user_email) = LOWER($1)',
       [userEmail]
     );
 
