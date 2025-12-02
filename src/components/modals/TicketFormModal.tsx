@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Upload, Trash2, File, CheckCircle, AlertCircle, Camera, Video, Mic, MicOff, Search, Brain, Sparkles } from 'lucide-react';
 import type { AttachedFile } from '@/types';
 import { formatFileSize, isImageFile, isVideoFile } from '@/utils';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface TicketFormModalProps {
   userName: string;
@@ -60,6 +61,9 @@ export function TicketFormModal({
   const [ticketNumber, setTicketNumber] = useState<string | number | null>(null);
   const [ticketCreatedAt, setTicketCreatedAt] = useState<string | null>(null); // Fecha de creación del ticket
   const [processingStep, setProcessingStep] = useState(0); // 0: no iniciado, 1-4: pasos del proceso
+
+  // Hook para sonidos de notificación
+  const { playTicketCreated } = useNotificationSound();
 
   // Speech to Text
   const [isListening, setIsListening] = useState(false);
@@ -289,6 +293,8 @@ export function TicketFormModal({
       // Si no hay ticketId, el ticket está "pendiente de procesamiento"
       if (ticketId) {
         setSubmitSuccess(true);
+        // Reproducir sonido de éxito
+        playTicketCreated();
       } else {
         // n8n respondió pero sin número de ticket - puede haber fallado internamente
         setSubmitPending(true);

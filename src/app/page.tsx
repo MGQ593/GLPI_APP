@@ -5,12 +5,11 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ModalType, GlpiUser } from '@/types';
 
 // Components
-import { Header, SearchBar, StatsCards, ActionBanners, InactivityWarningModal } from '@/components';
+import { Header, SearchBar, StatsCards, ActionBanners, InactivityWarningModal, PWAInstallBanner } from '@/components';
 import { EmailModal, TicketFormModal, TicketListModal, TicketDetailModal } from '@/components/modals';
 
 // Hooks
-import { useGlpiSession, useTickets, useTicketDetail, useUserCache, useAgentIds, useFileAttachments } from '@/hooks';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useGlpiSession, useTickets, useTicketDetail, useUserCache, useAgentIds, useFileAttachments, usePushNotifications } from '@/hooks';
 
 export default function HomePage() {
   // Modal states
@@ -139,6 +138,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* PWA Install & Push Notification Banner */}
+      <PWAInstallBanner />
+
       {/* Header */}
       <Header />
 

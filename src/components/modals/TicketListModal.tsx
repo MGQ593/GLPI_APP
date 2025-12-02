@@ -9,6 +9,7 @@ import { StarRating } from '../StarRating';
 import { SatisfactionModal } from './SatisfactionModal';
 import { getTicketSatisfaction, updateSatisfactionStatus, TicketSatisfaction } from '@/services/glpiApi';
 import { useTicketUpdates } from '@/hooks/useTicketUpdates';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface TicketListModalProps {
   email: string;
@@ -77,11 +78,18 @@ export function TicketListModal({
     satisfactionId: number;
   } | null>(null);
 
+  // Hook para sonidos de notificación
+  const { playTicketUpdated } = useNotificationSound();
+
   // Hook para actualizaciones en tiempo real via SSE
   useTicketUpdates(tickets, setTickets, {
     enabled: !isLoading && tickets.length > 0,
     onUpdate: (update) => {
       console.log('[TicketListModal] onUpdate callback recibido:', update);
+
+      // Reproducir sonido de actualización
+      playTicketUpdated();
+
       // Notificar al padre si hay callback
       if (onTicketsUpdate) {
         onTicketsUpdate(tickets);
