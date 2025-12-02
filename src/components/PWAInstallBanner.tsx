@@ -7,9 +7,10 @@ import { usePWAInstall, usePushNotifications } from '@/hooks';
 
 export function PWAInstallBanner() {
   const { isInstalled, isInstallable, isIOS, promptInstall } = usePWAInstall();
-  const { isSubscribed, permission, isSupported: pushSupported, subscribe } = usePushNotifications(null);
+  const { isSubscribed, permission, isSupported: pushSupported, requestPermission } = usePushNotifications(null);
   const [dismissed, setDismissed] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   // Verificar si ya se descartó antes
   useEffect(() => {
@@ -103,11 +104,23 @@ export function PWAInstallBanner() {
               </p>
             </div>
             <button
-              onClick={() => subscribe()}
-              className="flex items-center gap-1 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+              onClick={async () => {
+                setIsRequesting(true);
+                try {
+                  const granted = await requestPermission();
+                  if (granted) {
+                    // Permiso concedido - la suscripción real se hará cuando el usuario valide su email
+                    console.log('[PWABanner] Permiso de notificaciones concedido');
+                  }
+                } finally {
+                  setIsRequesting(false);
+                }
+              }}
+              disabled={isRequesting}
+              className="flex items-center gap-1 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-50"
             >
               <Bell className="w-4 h-4" />
-              Activar
+              {isRequesting ? 'Activando...' : 'Activar'}
             </button>
           </div>
         </div>
