@@ -135,13 +135,33 @@ export function usePushNotifications(userEmail: string | null): UsePushNotificat
 
       console.log('[Push] Service Worker registrado:', registration.scope);
 
-      // Esperar a que esté activo
-      await navigator.serviceWorker.ready;
+      // Esperar a que esté listo
+      const readyRegistration = await navigator.serviceWorker.ready;
+      console.log('[Push] Service Worker ready:', readyRegistration.scope);
 
-      // Pequeña espera para asegurar que el SW esté completamente activo
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Esperar a que haya un SW activo
+      if (!readyRegistration.active) {
+        console.log('[Push] Esperando activación del Service Worker...');
+        await new Promise<void>((resolve) => {
+          const sw = readyRegistration.installing || readyRegistration.waiting;
+          if (!sw) {
+            resolve();
+            return;
+          }
+          sw.addEventListener('statechange', function onStateChange() {
+            if (sw.state === 'activated') {
+              sw.removeEventListener('statechange', onStateChange);
+              resolve();
+            }
+          });
+          // Timeout de seguridad
+          setTimeout(resolve, 2000);
+        });
+      }
 
-      return registration;
+      console.log('[Push] Service Worker activo:', readyRegistration.active?.state);
+
+      return readyRegistration;
     } catch (error) {
       console.error('[Push] Error registrando Service Worker:', error);
       return null;
