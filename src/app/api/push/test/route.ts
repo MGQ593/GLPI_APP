@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    const ticketUrl = `${APP_URL}/detalleticket?mail=${encodeURIComponent(userEmail)}&idticket=${ticketId}`;
+    // Normalizar URL: quitar slash final de APP_URL y usar email en minúsculas
+    const baseUrl = APP_URL.replace(/\/$/, '');
+    const ticketUrl = `${baseUrl}/detalleticket?mail=${encodeURIComponent(userEmail.toLowerCase())}&idticket=${ticketId}`;
 
     const payload = JSON.stringify({
       title: `Ticket #${ticketId}`,

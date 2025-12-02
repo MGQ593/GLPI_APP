@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
     const statusText = ticketStatus ? (STATUS_MAP[ticketStatus] || `Estado ${ticketStatus}`) : '';
     const notificationTitle = title || `Ticket #${ticketId}`;
     const notificationBody = message || `${statusText ? `Estado: ${statusText}` : 'Tu ticket ha sido actualizado'}`;
-    const ticketUrl = `${APP_URL}/detalleticket?mail=${encodeURIComponent(userEmail)}&idticket=${ticketId}`;
+    // Normalizar URL: quitar slash final de APP_URL y usar email en minúsculas
+    const baseUrl = APP_URL.replace(/\/$/, '');
+    const ticketUrl = `${baseUrl}/detalleticket?mail=${encodeURIComponent(userEmail.toLowerCase())}&idticket=${ticketId}`;
 
     const payload = JSON.stringify({
       title: notificationTitle,
