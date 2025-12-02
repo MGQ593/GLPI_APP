@@ -76,12 +76,15 @@ export async function POST(request: NextRequest) {
     const baseUrl = APP_URL.replace(/\/$/, '');
     const ticketUrl = `${baseUrl}/detalleticket?mail=${encodeURIComponent(userEmail.toLowerCase())}&idticket=${ticketId}`;
 
+    // Usar timestamp para que cada notificación sea única y no reemplace a la anterior
+    const notificationTag = `ticket-${ticketId}-${Date.now()}`;
+
     const payload = JSON.stringify({
       title: notificationTitle,
       body: notificationBody,
       icon: '/icons/icon-192x192.svg',
       badge: '/icons/icon-192x192.svg',
-      tag: `ticket-${ticketId}`,
+      tag: notificationTag,
       data: {
         ticketId,
         ticketStatus,
