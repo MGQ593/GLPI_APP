@@ -117,7 +117,7 @@ export function SatisfactionModal({
               onChange={(e) => setComment(e.target.value)}
               placeholder="¿Algún comentario adicional?"
               rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-300 resize-none"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-300 resize-none"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export function SatisfactionModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || rating === 0}
-            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

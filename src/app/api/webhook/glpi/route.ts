@@ -233,7 +233,13 @@ function stripHtml(html: string): string {
 }
 
 // Función para obtener datos completos del ticket desde GLPI API
-async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<string, unknown>; lastFollowup: string | null; requesterEmail: string | null } | null> {
+async function fetchTicketFromGLPI(ticketId: number): Promise<{
+  ticket: Record<string, unknown>;
+  lastFollowup: string | null;
+  requesterEmail: string | null;
+  requesterId: number | null;
+  lastFollowupUserId: number | null;
+} | null> {
   try {
     const GLPI_URL = process.env.GLPI_REST_API_URL;
     const APP_TOKEN = process.env.GLPI_APP_TOKEN;
@@ -287,6 +293,7 @@ async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<s
 
     // Obtener el último seguimiento (ITILFollowup) del ticket
     let lastFollowup: string | null = null;
+    let lastFollowupUserId: number | null = null;
     try {
       const followupResponse = await fetch(
         `${GLPI_URL}/Ticket/${ticketId}/ITILFollowup?order=DESC&range=0-0`,
@@ -311,6 +318,11 @@ async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<s
             lastFollowup = stripHtml(latestFollowup.content);
             console.log('[Webhook GLPI] Último followup:', lastFollowup);
           }
+          // Guardar el ID del usuario que creó el followup
+          if (latestFollowup.users_id) {
+            lastFollowupUserId = Number(latestFollowup.users_id);
+            console.log('[Webhook GLPI] Usuario que creó el followup:', lastFollowupUserId);
+          }
         }
       } else {
         console.log('[Webhook GLPI] No se pudieron obtener followups:', followupResponse.status);
@@ -321,6 +333,7 @@ async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<s
 
     // Obtener el email del solicitante (requester) desde Ticket_User
     let requesterEmail: string | null = null;
+    let requesterId: number | null = null;
     try {
       // Buscar los usuarios relacionados al ticket con tipo 1 (requester)
       const ticketUsersResponse = await fetch(
@@ -346,7 +359,7 @@ async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<s
           : [];
 
         if (requesters.length > 0) {
-          const requesterId = requesters[0].users_id;
+          requesterId = Number(requesters[0].users_id);
 
           // Obtener datos del usuario para conseguir el email
           const userResponse = await fetch(
@@ -406,7 +419,7 @@ async function fetchTicketFromGLPI(ticketId: number): Promise<{ ticket: Record<s
       headers: { 'App-Token': APP_TOKEN, 'Session-Token': sessionToken },
     });
 
-    return { ticket: ticketData, lastFollowup, requesterEmail };
+    return { ticket: ticketData, lastFollowup, requesterEmail, requesterId, lastFollowupUserId };
 
   } catch (error) {
     console.error('[Webhook GLPI] Error consultando GLPI API:', error);
@@ -581,6 +594,8 @@ export async function POST(request: NextRequest) {
     let lastFollowupContent: string | undefined;
     let requesterEmail: string | undefined;
     let ticketTitle: string | undefined;
+    let requesterId: number | undefined;
+    let lastFollowupUserId: number | undefined;
 
     if (glpiData) {
       const glpiTicket = glpiData.ticket;
@@ -610,7 +625,15 @@ export async function POST(request: NextRequest) {
         lastFollowupContent = glpiData.lastFollowup;
       }
 
-      console.log('[Webhook GLPI] Datos de GLPI API - status:', statusCode, statusLabel, 'priority:', priority, priorityLabel, 'requesterEmail:', requesterEmail, 'title:', ticketTitle);
+      // ID del solicitante y del usuario que creó el último followup
+      if (glpiData.requesterId) {
+        requesterId = glpiData.requesterId;
+      }
+      if (glpiData.lastFollowupUserId) {
+        lastFollowupUserId = glpiData.lastFollowupUserId;
+      }
+
+      console.log('[Webhook GLPI] Datos de GLPI API - status:', statusCode, statusLabel, 'priority:', priority, priorityLabel, 'requesterEmail:', requesterEmail, 'title:', ticketTitle, 'requesterId:', requesterId, 'lastFollowupUserId:', lastFollowupUserId);
     } else {
       // Fallback a datos del webhook
       statusCode = b.status ? Number(b.status) : undefined;
@@ -669,16 +692,26 @@ export async function POST(request: NextRequest) {
     console.log(`[Webhook GLPI] Evento emitido para ticket ${ticketId}. Listeners activos: ${ticketEvents.getListenerCount()}`);
 
     // Enviar push notification al usuario solicitante
+    // Solo notificar si:
+    // 1. Hay un email del solicitante
+    // 2. El último followup NO fue creado por el solicitante (es decir, fue creado por un agente)
+    //    O no hay información de followup (cambio de estado u otra actualización)
     let pushResult = { sent: 0, failed: 0 };
+    const isFollowupFromRequester = requesterId && lastFollowupUserId && requesterId === lastFollowupUserId;
+
     if (requesterEmail) {
-      console.log(`[Webhook GLPI] Enviando push notification a ${requesterEmail}`);
-      pushResult = await sendPushNotificationToUser(
-        requesterEmail,
-        ticketId,
-        statusCode,
-        ticketTitle
-      );
-      console.log(`[Webhook GLPI] Push result: ${pushResult.sent} enviados, ${pushResult.failed} fallidos`);
+      if (isFollowupFromRequester) {
+        console.log(`[Webhook GLPI] Followup creado por el mismo solicitante (userId: ${lastFollowupUserId}), omitiendo push notification`);
+      } else {
+        console.log(`[Webhook GLPI] Enviando push notification a ${requesterEmail} (followup de agente o cambio de estado)`);
+        pushResult = await sendPushNotificationToUser(
+          requesterEmail,
+          ticketId,
+          statusCode,
+          ticketTitle
+        );
+        console.log(`[Webhook GLPI] Push result: ${pushResult.sent} enviados, ${pushResult.failed} fallidos`);
+      }
     } else {
       console.log('[Webhook GLPI] No se encontró email del solicitante, omitiendo push notification');
     }

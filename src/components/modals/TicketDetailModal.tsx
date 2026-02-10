@@ -1,11 +1,44 @@
 // src/components/modals/TicketDetailModal.tsx
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, ArrowLeft, Maximize2, Minimize2, Clock, FileText, Mail, MessageSquare, Loader2, Check, AlertCircle, Send, Plus, Paperclip, Image, File, Download, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { Ticket, TimelineMessage, CommentAttachment } from '@/types';
 import { getStatusStyle, getStatusLabel, getPriorityStyle, getPriorityLabel, sanitizeHtml, formatFileSize } from '@/utils';
 import { approveSolution, rejectSolution, sendFollowup } from '@/services/glpiApi';
+
+// Función para descargar documentos de forma segura (sin abrir ventanas en blanco)
+async function downloadDocument(documentId: number, sessionToken: string, filename: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/glpi/document/${documentId}?session_token=${sessionToken}&download=true`);
+
+    if (!response.ok) {
+      // Intentar obtener el mensaje de error
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Error al descargar el archivo' };
+      }
+      return { success: false, error: `Error ${response.status}: No se pudo descargar el archivo` };
+    }
+
+    // Crear blob y descargar
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error descargando documento:', error);
+    return { success: false, error: 'Error de conexión al descargar el archivo' };
+  }
+}
 
 interface TicketDetailModalProps {
   ticket: Ticket;
@@ -131,6 +164,27 @@ export function TicketDetailModal({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingSolutionId, setRejectingSolutionId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Download state
+  const [downloadingDocId, setDownloadingDocId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  // Handler para descargar documentos
+  const handleDownload = useCallback(async (docId: number, filename: string) => {
+    if (!sessionToken || downloadingDocId) return;
+
+    setDownloadingDocId(docId);
+    setDownloadError(null);
+
+    const result = await downloadDocument(docId, sessionToken, filename);
+
+    if (!result.success) {
+      setDownloadError(result.error || 'Error al descargar');
+      setTimeout(() => setDownloadError(null), 5000);
+    }
+
+    setDownloadingDocId(null);
+  }, [sessionToken, downloadingDocId]);
 
   const handleApproveSolution = async (solutionId: number) => {
     if (!sessionToken || isProcessingSolution) return;
@@ -400,15 +454,18 @@ export function TicketDetailModal({
                               <p className="text-xs text-gray-500">{formatFileSize(message.document.filesize)}</p>
                             </div>
                             {sessionToken && (
-                              <a
-                                href={`/api/glpi/document/${message.document.id}?session_token=${sessionToken}&download=true`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                              <button
+                                onClick={() => handleDownload(message.document!.id, message.document!.filename)}
+                                disabled={downloadingDocId === message.document.id}
+                                className="p-1.5 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
                                 title="Descargar"
                               >
-                                <Download size={16} className="text-gray-600" />
-                              </a>
+                                {downloadingDocId === message.document.id ? (
+                                  <Loader2 size={16} className="text-gray-600 animate-spin" />
+                                ) : (
+                                  <Download size={16} className="text-gray-600" />
+                                )}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -455,15 +512,18 @@ export function TicketDetailModal({
                                       <p className="text-sm font-medium truncate">{doc.filename}</p>
                                     </div>
                                     {sessionToken && (
-                                      <a
-                                        href={`/api/glpi/document/${doc.id}?session_token=${sessionToken}&download=true`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                      <button
+                                        onClick={() => handleDownload(doc.id, doc.filename)}
+                                        disabled={downloadingDocId === doc.id}
+                                        className="p-1.5 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
                                         title="Descargar"
                                       >
-                                        <Download size={16} className="text-gray-600" />
-                                      </a>
+                                        {downloadingDocId === doc.id ? (
+                                          <Loader2 size={16} className="text-gray-600 animate-spin" />
+                                        ) : (
+                                          <Download size={16} className="text-gray-600" />
+                                        )}
+                                      </button>
                                     )}
                                   </div>
                                 </div>
@@ -521,10 +581,10 @@ export function TicketDetailModal({
                 <span className="text-sm text-green-700">{commentSuccess || solutionSuccess}</span>
               </div>
             )}
-            {(commentError || attachmentError || solutionError) && (
+            {(commentError || attachmentError || solutionError || downloadError) && (
               <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600" />
-                <span className="text-sm text-red-700">{commentError || attachmentError || solutionError}</span>
+                <span className="text-sm text-red-700">{commentError || attachmentError || solutionError || downloadError}</span>
               </div>
             )}
 

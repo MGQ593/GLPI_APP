@@ -328,7 +328,7 @@ export function TicketListModal({
                                     satisfactionId: (satisfactions[ticket.rawId] as TicketSatisfaction).id,
                                   });
                                 }}
-                                className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+                                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
                               >
                                 <StarRating rating={null} readonly size={20} />
                                 <span className="underline">Calificar atención</span>
@@ -345,7 +345,7 @@ export function TicketListModal({
                                     satisfactionId: 0,
                                   });
                                 }}
-                                className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+                                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
                               >
                                 <StarRating rating={null} readonly size={20} />
                                 <span className="underline">Calificar atención</span>
