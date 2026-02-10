@@ -18,7 +18,7 @@ async function fetchQueueCount(): Promise<number | null> {
 
   if (!apiUrl || !appToken || !userToken) return null;
 
-  let sessionToken: string | null = null;
+  let sessionToken = '';
 
   try {
     // Iniciar sesión GLPI
