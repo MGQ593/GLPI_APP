@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ModalType, GlpiUser } from '@/types';
 
 // Components
-import { Header, SearchBar, StatsCards, ActionBanners, InactivityWarningModal, PWAInstallBanner } from '@/components';
+import { Header, StatsCards, ActionBanners, InactivityWarningModal, PWAInstallBanner } from '@/components';
 import { EmailModal, TicketFormModal, TicketListModal, TicketDetailModal } from '@/components/modals';
 
 // Hooks
@@ -145,8 +145,7 @@ export default function HomePage() {
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <SearchBar />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <StatsCards />
         <ActionBanners
           onOpenCreateTicket={() => handleOpenModal('create')}
