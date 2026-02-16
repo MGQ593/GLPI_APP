@@ -278,8 +278,8 @@ export function TicketListModal({
                         </div>
                       </div>
 
-                      {/* Última Actualización */}
-                      {ticket.lastUpdate && (
+                      {/* Última Actualización - ocultar si no hay agente asignado (evita mostrar followups privados del bot) */}
+                      {ticket.lastUpdate && ticket.assignedTo !== 'Sin asignar' && (
                         <div className="p-3 sm:p-4 bg-slate-50 rounded-xl">
                           <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
                             <strong className="block sm:inline">Última actualización:</strong>
