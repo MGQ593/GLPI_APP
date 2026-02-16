@@ -261,6 +261,10 @@ export function useTicketDetail(
 
         for (const followup of followupsResponse.followups) {
           const fu = followup as { id: number; users_id?: number; date?: string; content?: string; is_private?: number };
+
+          // Ocultar followups privados al usuario
+          if (fu.is_private === 1) continue;
+
           const userId = fu.users_id || 0;
           const userData = userId ? await fetchUserName(userId) : { firstname: '', realname: 'Agente' };
           const fuUserName = `${userData.firstname} ${userData.realname}`.trim() || 'Agente';
@@ -278,7 +282,7 @@ export function useTicketDetail(
             userName: fuUserName,
             userInitials: getInitials(userData.firstname, userData.realname),
             content: decodeHtmlEntities(fu.content || '', glpiSessionToken),
-            isPrivate: fu.is_private === 1,
+            isPrivate: false,
             isAgent: isAgent(userId),
             documents: attachedDocs,  // Array de documentos adjuntos al followup
           });
@@ -481,6 +485,10 @@ export function useTicketDetail(
       if (followupsResponse.success && Array.isArray(followupsResponse.followups)) {
         for (const followup of followupsResponse.followups) {
           const fu = followup as { id: number; users_id?: number; date?: string; content?: string; is_private?: number };
+
+          // Ocultar followups privados al usuario
+          if (fu.is_private === 1) continue;
+
           const userId = fu.users_id || 0;
           const userData = userId ? await fetchUserName(userId) : { firstname: '', realname: 'Agente' };
           const fuUserName = `${userData.firstname} ${userData.realname}`.trim() || 'Agente';
@@ -496,7 +504,7 @@ export function useTicketDetail(
             userName: fuUserName,
             userInitials: getInitials(userData.firstname, userData.realname),
             content: decodeHtmlEntities(fu.content || '', glpiSessionToken),
-            isPrivate: fu.is_private === 1,
+            isPrivate: false,
             isAgent: isAgentCheck(userId),
             documents: attachedDocs,
           });
